@@ -1,0 +1,70 @@
+NYS-Sun Initiative: Installation Cost Barometer 
+========================================================
+author: Frederick Morris
+date: January 2015
+transition-speed: fast
+
+
+```{r, echo = FALSE}
+load("SunRawData2.Rda")
+load("NYSunData.Rda")
+library(scales)
+library(plyr)
+library(broman)
+library(graphics)
+library(pander)
+library(ggplot2)
+```
+Introduction
+========================================================
+
+- This application was developed based on data retrieved 
+from the NY-Sun Initiative project database.  
+
+- The database provides a comprehensive listing of Solar PV projects installed under the New York State Energy Research and Development Authority (NYSERDA) Residential/Small Commercial Solar Electric program.
+
+- The application provides a means to estimate the cost of installing
+a Solar PV system based on various configuration options, the choice of
+financing method and the proposed customer type.
+
+
+The NY-Sun Initiative Data
+========================================================
+***As of the date of this analysis, the database contained information on `r comma_format()(nrow(SunRawData2))` installations from 2003-2014. Based on the observation that installed costs have been decreasing on a yearly basis, only installations from 2013 and 2014 were used to develop the prediction model.*** 
+
+```{r data_stats, echo=FALSE, fig.height=3, fig.width=2}
+PVCostStats <- ddply(SunRawData2, c( "Year" = "Date.Install"), summarise,
+                "Installations"    = comma_format()(length(Project.Cost)),
+               "Average Cost per Watt" = comma_format()(sum(Project.Cost) / sum(Total.Nameplate.KW)/1000))
+```
+
+```{r stats_table, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+panderOptions('table.split.table', Inf)
+set.caption("")
+pander(PVCostStats, style = 'rmarkdown')
+```
+
+Data Analysis and Machine Learning Model Selection
+========================================================
+
+***Observed extreme outliers were removed to improve the performance of the model and a Parallel computing Random Forest regresion model was selected to approximate the installed cost estimates***
+
+```{r, echo = FALSE, width=12}
+coplot((Project.Cost/Total.Nameplate.KW/1000) ~ Date.Install | Sector, data = SunRawData2, panel = panel.smooth, xlab = "NY-Sun Initiative: Project Cost vs. Customer Type, given year of Installaton")
+
+```
+
+The NYS-Sun Initiative: Installation Cost Barometer  
+========================================================
+
+The following is a link to the application:
+[http://clarion.shinyapps.io/PR_Project/](http://clarion.shinyapps.io/PR_Project/)
+
+```{r chart, echo = FALSE}
+
+ggplot(NYSunData,aes(x = Project.Cost, fill = Sector ))+geom_density(alpha = .3)+
+        theme(axis.title.y = element_blank(), axis.ticks = element_blank(), 
+              axis.text.y = element_blank())
+```
+
+
